@@ -9,6 +9,7 @@ import com.revolut.dto.Response;
 import com.revolut.service.exception.AccountException;
 import com.revolut.service.model.Account;
 import com.revolut.service.AccountService;
+import java.math.BigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Request;
@@ -33,7 +34,7 @@ class ServerStarter {
     void start() {
         port(port);
         path(basePath, () -> {
-            before("/*", (request, response) -> log.info("Received api call: " + request.body()));
+            before("/*", (request, response) -> log.info("Received api call: {}", request.body()));
             post("/transfer", "application/json", this::handleTransferRequest, gson::toJson);
             get("/account/:number", "application/json", this::handleAccountRequest, gson::toJson);
         });
@@ -48,7 +49,7 @@ class ServerStarter {
 
     }
 
-    private Response handleTransferRequest(Request request, spark.Response response) {
+    private Response<?> handleTransferRequest(Request request, spark.Response response) throws AccountException {
         TransferRequest transferRequest = parseTransferRequest(request.body());
         accountService.transferMoney(
                 transferRequest.getFromAccountNumber(),
@@ -59,7 +60,7 @@ class ServerStarter {
         return Response.done(null);
     }
 
-    private Response<Account> handleAccountRequest(Request request, spark.Response response) {
+    private Response<Account> handleAccountRequest(Request request, spark.Response response) throws AccountException {
         long accountNumber = Long.parseLong(request.params(":number"));
         response.type("application/json");
         return Response.done(
@@ -86,7 +87,8 @@ class ServerStarter {
         }
         if (isNull(request.getAmount())) {
             errorMessage.append("\"amount\" is required; ");
-        } else if(request.getAmount() <= 0){
+            //для Double тут NPE если не там null
+        } else if(BigDecimal.ZERO.compareTo(request.getAmount()) >= 0) {
             errorMessage.append("\"amount\" should be positive");
         }
         String message = errorMessage.toString();

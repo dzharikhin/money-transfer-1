@@ -1,17 +1,18 @@
 create table accounts (
                       account_number bigint primary key,
-                      last_statment_balance number(10,4) default 0,
+                      last_statment_balance decimal(10,4) default 0,
                       open_date timestamp not null default CURRENT_TIMESTAMP
                       );
 create table transactions (
                       id bigint auto_increment primary key,
                       from_account_number int not null,
                       to_account_number int not null,
-                      amount number(10,4),
+                      amount decimal(10,4),
                       created_date timestamp not null default CURRENT_TIMESTAMP,
                       foreign key (from_account_number) references accounts(account_number),
                       foreign key (to_account_number) references accounts(account_number)
                       );
+--решение любопытное, но под нагрузкой... ну короче это надо словами объяснять хорошо, че делать, когда данных овер9000
 create view account_balance as
       select a.account_number, (a.last_statment_balance + IFNULL(debit,0) - IFNULL(credit,0)) as balance from accounts a
             left join

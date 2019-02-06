@@ -1,6 +1,5 @@
 package com.revolut;
 
-import org.junit.jupiter.api.*;
 import spark.Spark;
 
 import java.io.IOException;
@@ -13,15 +12,23 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
+//у меня почему-то 2 теста проходят,
+// а 4 отваливаются с java.net.ConnectException: В соединении отказано
+// возможно я че-то сломал
 @DisplayName("Rest test")
 public class ApplicationTest {
 
     @BeforeEach
     void createApplication() throws SQLException, IOException, URISyntaxException {
+        //оно не умеет порт 0? хотя бы в тестах
         new Application(4567, "/api", "org.h2.Driver", "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1").start();
     }
 
@@ -39,6 +46,8 @@ public class ApplicationTest {
     void testInvalidRequest1() throws URISyntaxException, IOException, InterruptedException {
         HttpResponse<String> response = doTransferRequest("{\"a\": \"b\"}");
         assertThat(response.statusCode(), is(200));
+        //возможно тут лучше десереализовать ответ и уже объекты матчить - такой тест поддерживать стремно, чуть ответ поменялся и все надо править
+        //см. как оно сейчас с BigDecimal не дружит
         assertThat(response.body(), is("{\"status\":\"ERROR\",\"errorMessage\":\"Input data has invalid format: \\\"fromAccountNumber\\\" is required; \\\"toAccountNumber\\\" is required; \\\"amount\\\" is required; \"}"));
     }
 
@@ -54,6 +63,8 @@ public class ApplicationTest {
     @DisplayName("Response validation for valid request")
     void testResponse() throws URISyntaxException, IOException, InterruptedException {
         HttpResponse<String> response = doTransferRequest(requestJson(1L, 2L, 34.561));
+        //мне не по душе, что всегда 200 - рест так не любит.
+        // Ну т.е. так делают, я знаю, но мне не по душе и неканонично - ябдоебся
         assertThat(response.statusCode(), is(200));
         assertThat(response.body(), is("{\"status\":\"DONE\"}"));
     }
@@ -86,7 +97,7 @@ public class ApplicationTest {
    }
 
 
-    private HttpResponse<String> doTransferRequest(String requestBody) throws IOException, InterruptedException, URISyntaxException {
+    private static HttpResponse<String> doTransferRequest(String requestBody) throws IOException, InterruptedException, URISyntaxException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:4567/api/transfer"))
@@ -95,7 +106,7 @@ public class ApplicationTest {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    private HttpResponse<String> doAccountRequest(String accountNumber) throws IOException, InterruptedException, URISyntaxException {
+    private static HttpResponse<String> doAccountRequest(String accountNumber) throws IOException, InterruptedException, URISyntaxException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:4567/api/account/" + accountNumber))
@@ -105,7 +116,7 @@ public class ApplicationTest {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    private String requestJson(long fromAccount, long toAccount, double amount) {
+    private static String requestJson(long fromAccount, long toAccount, double amount) {
         return "{\"fromAccountNumber\":" + fromAccount + ",\"toAccountNumber\":" + toAccount + ", \"amount\": " + amount + "}";
     }
 }

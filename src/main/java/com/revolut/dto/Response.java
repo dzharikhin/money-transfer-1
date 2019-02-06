@@ -1,6 +1,6 @@
 package com.revolut.dto;
 
-public class Response<T> {
+public final class Response<T> {
 
     private final Status status;
     private final String errorMessage;
@@ -26,10 +26,10 @@ public class Response<T> {
     }
 
     public static <T> Response<T> done(T result){
-        return new Response<T>(Status.DONE, null, result);
+        return new Response<>(Status.DONE, null, result);
     }
 
-    public static Response error(String message){
+    public static Response<?> error(String message){
         return new Response<>(Status.ERROR, message, null);
     }
 

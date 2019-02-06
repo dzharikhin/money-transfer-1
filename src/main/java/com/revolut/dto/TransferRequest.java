@@ -1,11 +1,13 @@
 package com.revolut.dto;
 
+import java.math.BigDecimal;
+
 public class TransferRequest {
     private final Long fromAccountNumber;
     private final Long toAccountNumber;
-    private final Double amount;
+    private final BigDecimal amount;
 
-    public TransferRequest(Long fromAccountNumber, Long toAccountNumber, Double amount) {
+    public TransferRequest(Long fromAccountNumber, Long toAccountNumber, BigDecimal amount) {
         this.fromAccountNumber = fromAccountNumber;
         this.toAccountNumber = toAccountNumber;
         this.amount = amount;
@@ -19,7 +21,7 @@ public class TransferRequest {
         return toAccountNumber;
     }
 
-    public Double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 

@@ -1,19 +1,20 @@
 package com.revolut.service.model;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 public class Account {
 
     private final Long number;
-    private final Double balance;
+    private final BigDecimal balance;
 
-    public Account(Long number, Double balance) {
+    public Account(Long number, BigDecimal balance) {
         this.number = number;
         this.balance = balance;
     }
 
 
-    public Double getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
@@ -23,11 +24,15 @@ public class Account {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         Account account = (Account) o;
         return Objects.equals(getNumber(), account.getNumber()) &&
-                Objects.equals(getBalance(), account.getBalance());
+          getBalance() != null && getBalance().compareTo(account.getBalance()) == 0;
     }
 
     @Override

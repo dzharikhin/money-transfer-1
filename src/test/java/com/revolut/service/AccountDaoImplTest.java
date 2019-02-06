@@ -1,14 +1,15 @@
 package com.revolut.service;
 
 import com.revolut.service.model.Account;
-import com.revolut.service.AccountDaoImpl;
-import com.revolut.service.ConnectionFactory;
-import org.junit.jupiter.api.*;
+import java.math.BigDecimal;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Optional;
@@ -19,14 +20,16 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AccountDaoImplTest {
-    private static AccountDaoImpl accountDao;
+    private AccountDaoImpl accountDao;
+
+    private DataSource dataSource;
 
     @BeforeEach
     void setUp() throws IOException, SQLException, URISyntaxException {
-        ConnectionFactory connectionFactory = new ConnectionFactory("org.h2.Driver", "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
-        initDB(connectionFactory);
-        accountDao = new AccountDaoImpl(connectionFactory);
-        try(Connection connection = connectionFactory.getConnection();
+        dataSource = DataSourceFactory.create("org.h2.Driver", "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
+        initDB(dataSource);
+        accountDao = new AccountDaoImpl(dataSource);
+        try(Connection connection = dataSource.getConnection();
             Statement statement = connection.createStatement()) {
             statement.execute("insert into transactions (from_account_number, to_account_number, amount) values (1,2,34.5634);\n" +
                     "insert into transactions (from_account_number, to_account_number, amount) values (3,1,50.7313);\n" +
@@ -37,7 +40,7 @@ class AccountDaoImplTest {
 
     @AfterEach
     void eraseDB() throws SQLException {
-        try(Connection connection = DriverManager.getConnection("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
+        try(Connection connection = dataSource.getConnection();
             Statement statement = connection.createStatement()){
             statement.execute("DROP ALL OBJECTS");
         }
@@ -47,7 +50,7 @@ class AccountDaoImplTest {
     void getExistedAccountById() {
         Optional<Account> account = accountDao.getAccountByNumber(1L);
         assertTrue(account.isPresent());
-        assertThat(account.get(), is(new Account(1L, 48.1679d)));
+        assertThat(account.get(), is(new Account(1L, BigDecimal.valueOf(48.1679d))));
     }
 
     @Test
@@ -58,10 +61,10 @@ class AccountDaoImplTest {
 
     @Test
     void createTransaction() {
-        accountDao.createTransaction(1L, 2L, 0.16);
+        accountDao.createTransaction(1L, 2L, BigDecimal.valueOf(0.16));
         Optional<Account> account = accountDao.getAccountByNumber(1L);
         assertTrue(account.isPresent());
-        assertThat(account.get(), is(new Account(1L, 48.0079d)));
+        assertThat(account.get(), is(new Account(1L, BigDecimal.valueOf(48.0079d))));
     }
 
 
